@@ -1,9 +1,3 @@
-/*This code loads a texture from file using SDL and sets up an OpenGL scene with
-a textured cube. It uses the gluPerspective() function to set up the projection
-matrix, and the gluLookAt() function to position the camera. The texture is bound
-using glBindTexture(), and the cube is drawn using glBegin() and glEnd() with texture
-coordinates and vertex indices. Finally, the buffer is swapped using SDL_GL_SwapWindow().*/
-
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <GL/glu.h>
@@ -14,32 +8,67 @@ const int SCREEN_HEIGHT = 480;
 
 // Define the vertex coordinates of the cube
 GLfloat vertices[] = {
-	-1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-	 1.0f,  1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
-	-1.0f, -1.0f,  1.0f,
-	 1.0f, -1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	-1.0f,  1.0f,  1.0f
+	// front
+	-1.0, -1.0,  1.0,
+	 1.0, -1.0,  1.0,
+	 1.0,  1.0,  1.0,
+	-1.0,  1.0,  1.0,
+	// top
+	-1.0,  1.0,  1.0,
+	 1.0,  1.0,  1.0,
+	 1.0,  1.0, -1.0,
+	-1.0,  1.0, -1.0,
+	// back
+	 1.0, -1.0, -1.0,
+	-1.0, -1.0, -1.0,
+	-1.0,  1.0, -1.0,
+	 1.0,  1.0, -1.0,
+	 // bottom
+	 -1.0, -1.0, -1.0,
+	  1.0, -1.0, -1.0,
+	  1.0, -1.0,  1.0,
+	 -1.0, -1.0,  1.0,
+	 // left
+	 -1.0, -1.0, -1.0,
+	 -1.0, -1.0,  1.0,
+	 -1.0,  1.0,  1.0,
+	 -1.0,  1.0, -1.0,
+	 // right
+	  1.0, -1.0,  1.0,
+	  1.0, -1.0, -1.0,
+	  1.0,  1.0, -1.0,
+	  1.0,  1.0,  1.0,
 };
 
 // Define the texture coordinates of the cube
-GLfloat texCoords[] = {
-	0.0f, 0.0f,
-	1.0f, 0.0f,
-	1.0f, 1.0f,
-	0.0f, 1.0f
+GLfloat texCoords[2 * 4 * 6] = {
+	// front
+	0.0, 0.0,
+	1.0, 0.0,
+	1.0, 1.0,
+	0.0, 1.0,
 };
 
 // Define the indices of the cube triangles
 GLuint indices[] = {
-	0, 1, 2, 2, 3, 0,
-	1, 5, 6, 6, 2, 1,
-	5, 4, 7, 7, 6, 5,
-	4, 0, 3, 3, 7, 4,
-	3, 2, 6, 6, 7, 3,
-	4, 5, 1, 1, 0, 4
+	// front
+	 0,  1,  2,
+	 2,  3,  0,
+	 // top
+	  4,  5,  6,
+	  6,  7,  4,
+	  // back
+	   8,  9, 10,
+	  10, 11,  8,
+	  // bottom
+	  12, 13, 14,
+	  14, 15, 12,
+	  // left
+	  16, 17, 18,
+	  18, 19, 16,
+	  // right
+	  20, 21, 22,
+	  22, 23, 20
 };
 
 // Load a texture from file and return its ID
@@ -56,12 +85,17 @@ GLuint loadTexture(const char* filename) {
 }
 
 int main(int argc, char* argv[]) {
+
+	for (int i = 1; i < 6; i++)
+		memcpy(&texCoords[i * 4 * 2], &texCoords[0], 2 * 4 * sizeof(GLfloat));
+
 	SDL_Init(SDL_INIT_VIDEO);
 	SDL_Window* window = SDL_CreateWindow("Textured Cube", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_OPENGL);
 	SDL_GL_CreateContext(window);
 
 	// Initialize OpenGL
 	glMatrixMode(GL_PROJECTION);
+	//set the projection matrix
 	gluPerspective(45.0f, (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.1f, 100.0f);
 	glMatrixMode(GL_MODELVIEW);
 	glEnable(GL_DEPTH_TEST);
@@ -90,14 +124,16 @@ int main(int argc, char* argv[]) {
 		glBindTexture(GL_TEXTURE_2D, textureID);
 
 		// Draw the cube
+		int texOffset = 0;
 		glBegin(GL_TRIANGLES);
 		for (int i = 0; i < 36; i += 3) {
-			glTexCoord2fv(texCoords);
+			glTexCoord2fv(texCoords + texOffset);
 			glVertex3fv(&vertices[indices[i] * 3]);
-			glTexCoord2fv(texCoords + 2);
+			glTexCoord2fv(texCoords + 2 + texOffset);
 			glVertex3fv(&vertices[indices[i + 1] * 3]);
-			glTexCoord2fv(texCoords + 4);
+			glTexCoord2fv(texCoords + 4 + texOffset);
 			glVertex3fv(&vertices[indices[i + 2] * 3]);
+			texOffset += 4;
 		}
 		glEnd();
 
